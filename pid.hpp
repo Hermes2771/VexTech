@@ -7,6 +7,14 @@
 using namespace vex;
 timer myTimer;
 
+// --------------------- PID CONSTANTS --------------------- // 
+// MUST BE DIRECTLY MODIFIED BY USER
+
+#define p 1.0 // Controls the impact of P
+#define i 1.0 // Controls the impact of I
+#define d 1.0 // Controls the impact of D
+
+// --------------------- CORE FUNCTION / NAMESPACES --------------------- //
 
 namespace PID
 {
@@ -26,16 +34,11 @@ namespace PID
 
     // PIDS
 
-    double P;
-    double I;
-    double D;
+    double P; // how large the error is now (present)
+    double I; // how large the error was before (past)
+    double D; // how large the error will be (future)
 
-    // PID constants / set by programmer
-
-    double p; // how large the error is now (present)
-    double i; // how large the error was before
-    double d; // how large it'll be in the future
-
+    // PID constants are at the top of the header file, change at your discretion
 
     void Reset()
     {
@@ -44,37 +47,35 @@ namespace PID
         previousTime = 0;
         currentTime = 0;
 
-        P, p, I, i, D, d = 0;
+        P, I, D = 0;
     }
 
     void Initialize(double kp, double ki, double kd)
     {
-        p = kp;
-        i = ki;
-        d = kd;
-        
         currentTime = myTimer.time();
         previousError = 0;
     }
 
     double Update(double currentPosition, double targetPosition)
     {
+        // calculate difference of positions
         error = currentPosition - targetPosition;
         currentTime = myTimer.time();
+
+        // calculate deltas (changes / differences)
         deltaTime = currentTime - previousTime;
         deltaError = error - previousError;
         
         P = p * error;
         I += error * deltaTime * i;
-
+        
+        // update previous values
         previousTime = currentTime;
         previousError = error;
 
-        if (deltaTime > 0)
-        {
-            D = deltaError / deltaTime * d;
-        }
-
+        // make sure deltaTime is greater than zero otherwise we divide by 0
+        if (deltaTime > 0) D = deltaError / deltaTime * d;
+    
         return P + I + D;
     }
 }

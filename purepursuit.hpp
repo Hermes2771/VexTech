@@ -7,35 +7,46 @@
 using namespace vex;
 using namespace PID;
 
-struct tuple
+#define errorMargin 0.1 // determines how close the robot has to be to a point for it to stop moving / reach its goal
+#define points 0 // controls how many points are in your path
+
+struct coordPair
 {
     double coord1;
     double coord2;
 };
 
 // settings
-double errorMargin = 0.1; // determines how close the robot has to be to a point for it to stop moving / reach its goal
 
-tuple currentTarget;
-tuple goalPoints[];
+coordPair currentTarget;
+coordPair goalPoints[];
 
 drivetrain myDriveTrain;
 
-void InitializePursuit(tuple newPoints[10])
+// ----------------------------- READ ----------------------------- //
+//
+// to be able to use this file, you must have a pre-made path / list of points.
+// if you want my recommendation for doing this, create two base points (point 0 (robots pos), point 1 (target pos))
+// between those points, using bezier splines to create a curved path between the points
+// the more points you use, the more likely the pure pursuit is to stay on track but having very close points on a curve
+// WILL cause the program to skip to the furthest points.
+// ----------------------------- THANK YOU FOR READING ----------------------------- //
+
+void InitializePursuit(coordPair newPoints[])
 {
     // The initialize function is to ensure points are only created once, so the path isn't constantly re-filed.
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < points; i++)
     {
         goalPoints[i] = newPoints[i];
     }
 }
 
-void StandardPursuit(tuple absolutePos, double absoluteOrientation, double lookDistance)
+void StandardPursuit(coordPair absolutePos, double absoluteOrientation, double lookDistance)
 {
     // find a point.
     // after finding a point, remove it from the list of viable points.
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < points; i++)
     {
         double xDist = goalPoints[i].coord1 - absolutePos.coord1;
         double yDist = goalPoints[i].coord2 - absolutePos.coord2;
@@ -45,7 +56,7 @@ void StandardPursuit(tuple absolutePos, double absoluteOrientation, double lookD
         if (totalDistance < lookDistance) // everything will be automatically removed from the list once it enters this range,
         // and the errorMargin determines whether or not it'll actually stop at those points or not. 
         {
-            tuple zeroTuple = {INFINITY, INFINITY};
+            coordPair zeroTuple = {INFINITY, INFINITY};
 
             currentTarget = goalPoints[i];
             goalPoints[i] = zeroTuple;
@@ -55,10 +66,11 @@ void StandardPursuit(tuple absolutePos, double absoluteOrientation, double lookD
     MoveToPoint(absolutePos, absoluteOrientation);
 }
 
-void MoveToPoint(tuple absolutePos, double absoluteOrientation)
+void MoveToPoint(coordPair absolutePos, double absoluteOrientation)
 {
     // get direction
-    tuple direction = {currentTarget.coord1 - absolutePos.coord1, currentTarget.coord2 - absolutePos.coord2};
+    coordPair direction = {currentTarget.coord1 - absolutePos.coord1, currentTarget.coord2 - absolutePos.coord2};
+
     double tanDirection = atan2(direction.coord2, direction.coord1);
     double totalDistance = sqrt(pow(currentTarget.coord1 - absolutePos.coord1, 2) + pow(currentTarget.coord2 - absolutePos.coord1, 2));
 

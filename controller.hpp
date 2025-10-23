@@ -8,23 +8,25 @@ using namespace vex;
 controller myController = controller();
 drivetrain myDriveTrain;
 
-double driveVelocity = 0;
-double turnVelocity = 0;
+// --------------------- CONSTANTS --------------------- //
 
-void ExponentialDrive(drivetrain myDriveTrain, double baseVelocity, double driveVelocity, double turnVelocity)
+#define driveVelocity 100 // controls overall speed of the robot
+#define turnVelocity 100 // controls turn speed of the robot
+
+// --------------------- FUNCTIONS --------------------- //
+
+void ExponentialDrive(drivetrain myDriveTrain)
 {
+    // put trackers on the controller to check for any changes (driver moves right stick up, etc)
     myController.Axis3.changed(OnChangeMove);
     myController.Axis1.changed(OnChangeRotate);
-
-    ::driveVelocity = driveVelocity;
-    ::myDriveTrain = myDriveTrain;
-    ::turnVelocity = turnVelocity;
 }
 
 void OnChangeMove()
 {
     double yAxis = myController.Axis3.position(); // up and down of the left joystick
 
+    // create a zero vector which we add movements to
     double finalMS = 0.0;
 
     if (yAxis > 0)
